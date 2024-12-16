@@ -1,0 +1,11 @@
+[package]
+name = "zk-stark-from-scratch"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ff = { version = "0.13", features = ["derive"] }
+rand = "0.8.5"
+num-bigint = "0.4.6"
+num-primes = "0.3.0"
+num-traits = "0.2.19"
