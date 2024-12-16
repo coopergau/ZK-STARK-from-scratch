@@ -59,14 +59,33 @@ pub fn find_primitive_element() {
                                     BigUint::from(21841u64), BigUint::from(348661u64), BigUint::from(1112388285061u64), BigUint::from(370244405487013669u64)];
 
     let mut primitive_element = BigUint::from(2u32);
-    loop {
+    while primitive_element < BigUint::from(10u32) {
+        println!("trying: {:?}", primitive_element);
         for factor in prime_factors.iter() {
             let exponent = p_minus_one.checked_div(&factor).unwrap();
-            let remainder = primitive_element.pow(exponent).rem(&p);
-            println!("{:?}", remainder);
+            let result = modular_exponentiation(primitive_element.clone(), exponent, p.clone());
+            println!("{:?}", result);
         }
-        break;
+        primitive_element = primitive_element.checked_add(&BigUint::one()).unwrap();
     }
 }
 
 // remainder part overflows the memory so we need a function for modular exponentiation: works through the exponentiation while reducing during the process to avoid memory overflow
+
+// Function performs bitwise modular exponentiation to be able to calculate a^b mod p when b is very large.
+pub fn modular_exponentiation(mut base: BigUint, mut exponent: BigUint, modulus: BigUint) -> BigUint {
+    let two = BigUint::from(2u32);
+    let mut result = BigUint::one();
+    base = base.rem(&modulus);
+    while exponent > BigUint::from(0u32) {
+        // If the current bit is 1
+        if exponent.clone().rem(&two) == BigUint::one() {
+            result = result.checked_mul(&base).unwrap().rem(&modulus);
+        }
+
+        base = base.checked_mul(&base).unwrap().rem(&modulus);
+        exponent = exponent.clone().checked_div(&two).unwrap();
+    }
+   
+    result
+}
