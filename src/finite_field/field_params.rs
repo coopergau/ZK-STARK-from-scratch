@@ -1,11 +1,11 @@
 use ff::PrimeField;
 
 #[derive(PrimeField)]
-// 2^(119) * 407 + 1
-// 
-#[PrimeFieldModulus = "270497897142230380135924736767050121217"]
-#[PrimeFieldGenerator = "85408008396924667383611388730472331217"]
+
+// (64 + 2^240)(128) + 1
+#[PrimeFieldModulus = "226156424291633194186662080095093570025917938800079226639565593765455339521"]
+#[PrimeFieldGenerator = "7"]
 #[PrimeFieldReprEndianness = "little"]
 //#[derive(Debug)]
-pub struct Fp([u64; 3]);
+pub struct Fp([u64; 4]);
 

@@ -1,1 +1,1 @@
-pub mod mimc_constants;
+pub mod get_mimc_constants;

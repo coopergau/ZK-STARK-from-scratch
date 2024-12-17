@@ -16,10 +16,8 @@ This means we can test for p values using the equation p = (k)128 + 1, for some 
 There is currently a bug with the is_prime function where it sometimes returns the wrong answer, so the function was used to find candidates that were then verified to be prime.
 */
 
-const SUBGROUP_ORDER: &str = "128";
-
 pub fn find_prime_field() {
-    let subgroup_order = BigUint::parse_bytes(SUBGROUP_ORDER.as_bytes(), 10).unwrap();
+    let subgroup_order = BigUint::parse_bytes(b"128", 10).unwrap();
     let two = BigUint::from(2u32);
     let two_hundred_fifty = BigUint::from(240u32);
     let mut k = two.pow(two_hundred_fifty); // Start k at 2^250 
@@ -31,8 +29,8 @@ pub fn find_prime_field() {
         let is_prime = Verification::is_prime(&p);
         if is_prime {
             println!("p: {:?}", p.to_str_radix(10));
-            println!("{:?}", is_prime);
-            println!("{:?}", counter);
+            println!("Is prime? {:?}", is_prime);
+            println!("k: {:?}", counter);
             break;
         }
         k = k.checked_add(&BigUint::one()).unwrap();
@@ -50,6 +48,9 @@ We know that p-1 = (64 + 2^240)(128) = 2^6(1 + 2^234)(2^7). Using an online fact
 2, 5, 13, 37, 53, 109, 157, 313, 1249, 1613, 3121, 7489, 21061, 21841, 348661, 1112388285061, 370244405487013669
 */
 
+// Function finds a primitive element of F_p by checking if each natural number is a primitive element, starting at 2, and stopping when one is found. 
+// Right now the limit is set to only test up to the number 10, which worked because 3 and 7 are both primitive elements.
+// 7 is a very commonly used generator so that will be used in field_params.rs.
 pub fn find_primitive_element() {
     let p = BigUint::parse_bytes(b"226156424291633194186662080095093570025917938800079226639565593765455339521", 10).unwrap();
     let p_minus_one = p.checked_sub(&&BigUint::one()).unwrap();
@@ -59,30 +60,37 @@ pub fn find_primitive_element() {
                                     BigUint::from(21841u64), BigUint::from(348661u64), BigUint::from(1112388285061u64), BigUint::from(370244405487013669u64)];
 
     let mut primitive_element = BigUint::from(2u32);
-    while primitive_element < BigUint::from(10u32) {
-        println!("trying: {:?}", primitive_element);
+    let limit = BigUint::from(10u32);
+    while primitive_element < limit {
+        let mut generator = true;
         for factor in prime_factors.iter() {
             let exponent = p_minus_one.checked_div(&factor).unwrap();
             let result = modular_exponentiation(primitive_element.clone(), exponent, p.clone());
-            println!("{:?}", result);
+            if result == BigUint::one() {
+                generator = false;
+                break
+            }
         }
+        println!("{:?}: {:?}", primitive_element, generator);
         primitive_element = primitive_element.checked_add(&BigUint::one()).unwrap();
     }
 }
 
-// remainder part overflows the memory so we need a function for modular exponentiation: works through the exponentiation while reducing during the process to avoid memory overflow
-
 // Function performs bitwise modular exponentiation to be able to calculate a^b mod p when b is very large.
+// It iterates over the bits that make up the exponent. The result starts a 1 and gets multiplied by the base if the current bit is a 1.
+// Every round the base is squared because moveing to the next bit of the exponent is really just multiplying the exponent by two, hence 
+// squaring the base.
 pub fn modular_exponentiation(mut base: BigUint, mut exponent: BigUint, modulus: BigUint) -> BigUint {
     let two = BigUint::from(2u32);
     let mut result = BigUint::one();
     base = base.rem(&modulus);
     while exponent > BigUint::from(0u32) {
-        // If the current bit is 1
+        // If the current bit is 1 multiply the result by the current base
         if exponent.clone().rem(&two) == BigUint::one() {
             result = result.checked_mul(&base).unwrap().rem(&modulus);
         }
 
+        // Square the base after every iteration
         base = base.checked_mul(&base).unwrap().rem(&modulus);
         exponent = exponent.clone().checked_div(&two).unwrap();
     }
