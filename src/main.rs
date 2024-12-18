@@ -1,11 +1,18 @@
-#[macro_use]
 extern crate ff;
 
 mod trace;
 mod finite_field;
-mod utils;
+
+use crate::finite_field::field_params::Fp;
+use crate::ff::PrimeField;
+
+const MIMC_ROUNDS: u32 = 127;
 
 fn main() {
-    //trace::mimc(1, 127);
-    utils::get_mimc_constants::generate_random_mimc_constants(127);
+    // Private input to the proof
+    let private_input = Fp::from_u128(5);
+    //let trace = trace::create_trace::mimc(private_input, MIMC_ROUNDS);
+    //println!("{:?}", trace);
+    finite_field::find_field_params::find_primitive_element();
+    finite_field::find_field_params::find_subgroup_generator();
 }

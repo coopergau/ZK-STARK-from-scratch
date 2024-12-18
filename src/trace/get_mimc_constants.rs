@@ -1,19 +1,19 @@
 use rand::rngs::OsRng;
 use crate::finite_field::field_params::{Fp, FpRepr};
 use crate::ff::{Field, PrimeField};
+use crate::MIMC_ROUNDS;
 use once_cell::sync::Lazy;
-use num_primes::BigUint;
 
+#[allow(dead_code)]
 pub fn generate_random_mimc_constants(size: u32) {
     for _ in 1..=size {
         let random_field_element = Fp::random(OsRng);
-        //println!("{:?}", random_field_element.to_repr().as_ref());
+        println!("{:?}", random_field_element.to_repr().as_ref());
     }
-    println!("{:?}", MIMC_CONSTANTS[0]);    
 }
 
 // The function above was used to generate these 127 random field elements. Each one is used in one round of the MiMC hash function.
-pub static MIMC_CONSTANTS: Lazy<[Fp; 127]> = Lazy::new(|| [
+pub static MIMC_CONSTANTS: Lazy<[Fp; MIMC_ROUNDS as usize]> = Lazy::new(|| [
     Fp::from_repr(FpRepr([227, 190, 227, 225, 200, 156, 236, 3, 195, 252, 118, 37, 96, 137, 37, 7, 77, 135, 22, 156, 67, 213, 4, 3, 212, 248, 68, 119, 61, 185, 90, 0])).unwrap(),
     Fp::from_repr(FpRepr([142, 49, 6, 58, 54, 101, 5, 20, 92, 102, 245, 70, 210, 62, 69, 52, 76, 195, 165, 181, 173, 154, 10, 86, 64, 195, 251, 61, 167, 79, 127, 0])).unwrap(),
     Fp::from_repr(FpRepr([231, 68, 35, 134, 236, 214, 76, 111, 54, 215, 234, 237, 104, 203, 16, 199, 37, 57, 79, 51, 15, 217, 35, 130, 98, 237, 246, 191, 132, 242, 56, 0])).unwrap(),

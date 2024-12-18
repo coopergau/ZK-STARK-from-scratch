@@ -4,6 +4,9 @@ use num_traits::identities::One;
 use num_traits::ops::checked::{CheckedMul, CheckedAdd, CheckedDiv, CheckedSub};
 use num_traits::Pow;
 use std::ops::Rem;
+use crate::MIMC_ROUNDS;
+
+// The functions in this file were used to find the finite field params but are not needed for the proof protocol so they all have #[allow(dead_code)].
 
 /* This function is used to find the following properties of a finite field for the STARK:
 1. Field modulus, p
@@ -15,9 +18,9 @@ This means we can test for p values using the equation p = (k)128 + 1, for some 
 
 There is currently a bug with the is_prime function where it sometimes returns the wrong answer, so the function was used to find candidates that were then verified to be prime.
 */
-
+#[allow(dead_code)]
 pub fn find_prime_field() {
-    let subgroup_order = BigUint::parse_bytes(b"128", 10).unwrap();
+    let subgroup_order = BigUint::parse_bytes(b"128", 10).unwrap(); // Might want to change to MIMC_ROUNDS
     let two = BigUint::from(2u32);
     let two_hundred_fifty = BigUint::from(240u32);
     let mut k = two.pow(two_hundred_fifty); // Start k at 2^250 
@@ -48,9 +51,21 @@ We know that p-1 = (64 + 2^240)(128) = 2^6(1 + 2^234)(2^7). Using an online fact
 2, 5, 13, 37, 53, 109, 157, 313, 1249, 1613, 3121, 7489, 21061, 21841, 348661, 1112388285061, 370244405487013669
 */
 
-// Function finds a primitive element of F_p by checking if each natural number is a primitive element, starting at 2, and stopping when one is found. 
-// Right now the limit is set to only test up to the number 10, which worked because 3 and 7 are both primitive elements.
-// 7 is a very commonly used generator so that will be used in field_params.rs.
+/* Function find_primitive_element() finds a primitive element of F_p by checking if each natural number is a primitive element, starting at 2, and stopping when one is found. 
+Right now the limit is set to only test up to the number 10, which worked because 3 and 7 are both primitive elements.
+7 is a very commonly used generator so that will be used in field_params.rs. */
+
+/* To perform polynomial encoding of the trace, a subgroup of F_p of order equal to the length of the trace (128) is required.
+To find a generator of this subgroup we can take our field generator g and compute g' = g^{(p-1)/128} mod p.
+g' will have the following properties:
+- g'^128 == 1 mod p, by Fermatt's little theorem
+- g'^i != 1 mod p, for 1 <= i <= 127
+- g'^i != g'^j, for i != j
+So essentially, g' will generate a cyclic subgroup of F_p with 128 unique elements.
+*/
+
+
+#[allow(dead_code)]
 pub fn find_primitive_element() {
     let p = BigUint::parse_bytes(b"226156424291633194186662080095093570025917938800079226639565593765455339521", 10).unwrap();
     let p_minus_one = p.checked_sub(&&BigUint::one()).unwrap();
@@ -62,36 +77,47 @@ pub fn find_primitive_element() {
     let mut primitive_element = BigUint::from(2u32);
     let limit = BigUint::from(10u32);
     while primitive_element < limit {
-        let mut generator = true;
+        let mut generator_found = true;
         for factor in prime_factors.iter() {
             let exponent = p_minus_one.checked_div(&factor).unwrap();
-            let result = modular_exponentiation(primitive_element.clone(), exponent, p.clone());
+            let result = modular_exponentiation(primitive_element.clone(), exponent, &p);
             if result == BigUint::one() {
-                generator = false;
+                generator_found = false;
                 break
             }
         }
-        println!("{:?}: {:?}", primitive_element, generator);
+        println!("{:?}: {:?}", primitive_element, generator_found);
         primitive_element = primitive_element.checked_add(&BigUint::one()).unwrap();
     }
 }
+
+// Function finds the generator of a cyclic subgroup of the field G. We want a subgroup with and order equal to the length of the trace: 128,
+// so the generator g needs the following properties:
+// - g^i mod p != 1 for integers 1 <= i <= 127
+// - g^128 mod p == 1
+// Similarly to find_primitive_element, the function starts at 2 and checks until it finds a valid g.
+
+// We actually dont even need this,
+// Mention some fermatts little theorem and the math behind the fact that g^{(p-1)/128} is the generator of a subgroup of order 128
+
 
 // Function performs bitwise modular exponentiation to be able to calculate a^b mod p when b is very large.
 // It iterates over the bits that make up the exponent. The result starts a 1 and gets multiplied by the base if the current bit is a 1.
 // Every round the base is squared because moveing to the next bit of the exponent is really just multiplying the exponent by two, hence 
 // squaring the base.
-pub fn modular_exponentiation(mut base: BigUint, mut exponent: BigUint, modulus: BigUint) -> BigUint {
+#[allow(dead_code)]
+pub fn modular_exponentiation(mut base: BigUint, mut exponent: BigUint, modulus: &BigUint) -> BigUint {
     let two = BigUint::from(2u32);
     let mut result = BigUint::one();
-    base = base.rem(&modulus);
+    base = base.rem(modulus);
     while exponent > BigUint::from(0u32) {
         // If the current bit is 1 multiply the result by the current base
         if exponent.clone().rem(&two) == BigUint::one() {
-            result = result.checked_mul(&base).unwrap().rem(&modulus);
+            result = result.checked_mul(&base).unwrap().rem(modulus);
         }
 
         // Square the base after every iteration
-        base = base.checked_mul(&base).unwrap().rem(&modulus);
+        base = base.checked_mul(&base).unwrap().rem(modulus);
         exponent = exponent.clone().checked_div(&two).unwrap();
     }
    
