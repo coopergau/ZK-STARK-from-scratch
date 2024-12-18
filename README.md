@@ -37,6 +37,4 @@ L: [1, 2^254] Paper uses [1, F] but I think it's good for it to be of order of a
 5. 
 
 ## What to do right now
-- create trace generator:
-    - Takes I and generates x_i for 0 <= i <= 127.
-    - Make fft function for poly interpolation.
+- Make fft function for poly interpolation.

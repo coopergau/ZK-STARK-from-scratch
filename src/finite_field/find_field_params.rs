@@ -4,7 +4,6 @@ use num_traits::identities::One;
 use num_traits::ops::checked::{CheckedMul, CheckedAdd, CheckedDiv, CheckedSub};
 use num_traits::Pow;
 use std::ops::Rem;
-use crate::MIMC_ROUNDS;
 
 // The functions in this file were used to find the finite field params but are not needed for the proof protocol so they all have #[allow(dead_code)].
 
