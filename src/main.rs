@@ -8,21 +8,25 @@ use crate::finite_field::field_params::Fp;
 use crate::ff::PrimeField;
 use crate::utils::fft;
 
+use crate::ff::Field;
+
 const MIMC_ROUNDS: u32 = 127;
 
 fn main() {
     // Private input to the proof
     // let private_input = Fp::from_u128(5);
-    let g: i32 = 4;
-    let inverse_g: i32 = 13;
-    let poly_coeffs: Vec<i32> = vec![5, 1, 13, 16];
-    let poly_evaluations: Vec<i32> = vec![1, 0, 1, 1];
-    let bruh = fft::interpolate_poly(poly_evaluations, g);
+    let g = Fp::from_u128(4);
+    let inverse_g = Fp::from_u128(13);
+    let poly_coeffs: Vec<Fp> = vec![Fp::from_u128(5), Fp::from_u128(1), Fp::from_u128(13), Fp::from_u128(16)];
+    let poly_evaluations: Vec<Fp> = vec![Fp::from_u128(1), Fp::from_u128(0), Fp::from_u128(1), Fp::from_u128(1)];
+    let bruh = fft::interpolate_poly(poly_evaluations, inverse_g);
     println!("{:?}", bruh);
     
-    let yuh = -8 % 17;
-    println!("{:?}", yuh);
+    let inverse_length = Fp::from_u128(4).invert().unwrap();
+    let norm_bruh: Vec<Fp> = bruh.iter().map(|&x| x * inverse_length).collect();
+    println!("{:?}", norm_bruh);
     
     
+    //un comment get mimc constants 
     
 }
