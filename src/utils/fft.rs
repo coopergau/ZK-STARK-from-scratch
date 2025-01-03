@@ -1,4 +1,3 @@
-use crate::finite_field::field_params::Fp;
 use crate::ff::PrimeField;
 use crate::ff::Field;
 
@@ -80,7 +79,9 @@ pub fn interpolate_poly<F: PrimeField>(evals: Vec<F>, inverse_omega: F) -> Vec<F
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::finite_field::field_params::Fp;
     use once_cell::sync::Lazy;
+    use rand::rngs::OsRng;
 
     /* A smaller field will be used for testing to ensure the functions produce expected polynomials. 
     The field modulus is 17, generator is 7. This allows for the use of the cyclic subgroup {1, 4, 13, 16} with generator 4. */
@@ -89,26 +90,85 @@ mod tests {
     #[PrimeFieldModulus = "17"]
     #[PrimeFieldGenerator = "7"]
     #[PrimeFieldReprEndianness = "little"]
-    pub struct Fp([u64; 1]);
+    pub struct FpSmall([u64; 1]);
    
-    pub static G: Lazy<Fp> = Lazy::new(|| Fp::from_u128(4));
-    pub static G_INVERSE: Lazy<Fp> = Lazy::new(|| Fp::invert(&G).unwrap());
+    pub static G: Lazy<FpSmall> = Lazy::new(|| FpSmall::from_u128(4));
+    pub static G_INVERSE: Lazy<FpSmall> = Lazy::new(|| FpSmall::invert(&G).unwrap());
 
     #[test]
     // The polynomial 5 + x + 13x^2 + 16x^3 has evaluations f(1)=1, f(4)=0, f(13)=1, and f(16)=1.
     fn test_evaluate_poly_basic() {
-        let poly_coeffs: Vec<Fp> = vec![Fp::from_u128(5), Fp::from_u128(1), Fp::from_u128(13), Fp::from_u128(16)];
-        let expected_evaluations: Vec<Fp> = vec![Fp::from_u128(1), Fp::from_u128(0), Fp::from_u128(1), Fp::from_u128(1)];
-        let actual_evaluations = evaluate_poly(poly_coeffs, *G);
-        assert_eq!(actual_evaluations, expected_evaluations);
+        let poly_coeffs: Vec<FpSmall> = vec![FpSmall::from_u128(5), FpSmall::from_u128(1), FpSmall::from_u128(13), FpSmall::from_u128(16)];
+        let expected_evals: Vec<FpSmall> = vec![FpSmall::from_u128(1), FpSmall::from_u128(0), FpSmall::from_u128(1), FpSmall::from_u128(1)];
+        let actual_evals = evaluate_poly(poly_coeffs, *G);
+        assert_eq!(actual_evals, expected_evals);
     }
     
     #[test]
+    // The evaluations f(1)=1, f(4)=0, f(13)=1, and f(16)=1 should return the coefficients of 5 + x + 13x^2 + 16x^3. 
     fn test_interpolate_poly_basic() {
-        // The evaluations f(1)=1, f(4)=0, f(13)=1, and f(16)=1 should return the coefficients of 5 + x + 13x^2 + 16x^3. 
-        let poly_evaluations: Vec<Fp> = vec![Fp::from_u128(1), Fp::from_u128(0), Fp::from_u128(1), Fp::from_u128(1)];
-        let expected_coeffs: Vec<Fp> = vec![Fp::from_u128(5), Fp::from_u128(1), Fp::from_u128(13), Fp::from_u128(16)];
-        let actual_coeffs = interpolate_poly(poly_evaluations, *G_INVERSE);
+        let poly_evals: Vec<FpSmall> = vec![FpSmall::from_u128(1), FpSmall::from_u128(0), FpSmall::from_u128(1), FpSmall::from_u128(1)];
+        let expected_coeffs: Vec<FpSmall> = vec![FpSmall::from_u128(5), FpSmall::from_u128(1), FpSmall::from_u128(13), FpSmall::from_u128(16)];
+        let actual_coeffs = interpolate_poly(poly_evals, *G_INVERSE);
         assert_eq!(actual_coeffs, expected_coeffs);
     }
+
+    #[test]
+    // A constant polynomial shoudl evaluate to the constant everywhere.
+    fn test_evaluate_constant(){
+        let poly_coeff: Vec<Fp> = vec![Fp::random(OsRng)];
+        let actual_eval = evaluate_poly(poly_coeff.clone(), Fp::random(OsRng));
+        assert_eq!(actual_eval, poly_coeff);
+    }
+
+    #[test] 
+    // A single evaluation should interpolate to a constant polynomial.
+    fn test_interpolate_constant(){
+        let poly_eval: Vec<Fp> = vec![Fp::random(OsRng)];
+        let actual_coeff = interpolate_poly(poly_eval.clone(), Fp::random(OsRng));
+        assert_eq!(actual_coeff, poly_eval);
+    }
+    
+    #[test]
+    // Tests that applying the IFFT of the FFT of given set of coefficients returns the same set of coefficients.
+    fn test_random_eval_then_interpolate(){
+        for _ in 0..100 {
+            // Generate random filed generator and inverse
+            let random_generator = Fp::random(OsRng);
+            let generator_inverse = Fp::invert(&random_generator).unwrap();
+            
+            // Generate random polynomial coefficients
+            let initial_coeffs: Vec<Fp> = (0..8).map(|_| Fp::random(OsRng)).collect();
+            
+            // Evaluate the polynomial at generator points
+            let evaluations = evaluate_poly(initial_coeffs.clone(), random_generator);
+            
+            // Interpolate the polynomial from the evaluations
+            let final_coeffs = interpolate_poly(evaluations, generator_inverse);
+            
+            assert_eq!(initial_coeffs, final_coeffs);
+        }
+    }
+    
+    #[test]
+    // Tests that applying the FFT of the IFFT of given set of evaluations returns the same set of evaluations.
+    fn test_random_interpolate_then_eval(){
+        for _ in 0..100 {
+            // Generate random filed generator and inverse
+            let random_generator = Fp::random(OsRng);
+            let generator_inverse = Fp::invert(&random_generator).unwrap();
+            
+            // Generate random polynomial evaluations for the generator points
+            let initial_evals: Vec<Fp> = (0..8).map(|_| Fp::random(OsRng)).collect();
+            
+            // Interpolate the polynomial coefficients
+            let coefficients = interpolate_poly(initial_evals.clone(), generator_inverse);
+            
+            // Evaluate the polynomial at the generator points
+            let final_evals = evaluate_poly(coefficients, random_generator);
+            
+            assert_eq!(initial_evals, final_evals);
+        }
+    }
+
 }

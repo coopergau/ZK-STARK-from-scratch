@@ -19,7 +19,7 @@ fn main() {
     let inverse_g = Fp::from_u128(13);
     let poly_coeffs: Vec<Fp> = vec![Fp::from_u128(5), Fp::from_u128(1), Fp::from_u128(13), Fp::from_u128(16)];
     let poly_evaluations: Vec<Fp> = vec![Fp::from_u128(1), Fp::from_u128(0), Fp::from_u128(1), Fp::from_u128(1)];
-    let bruh = fft::interpolate_poly(poly_evaluations, inverse_g);
+    let bruh = fft::evaluate_poly(poly_coeffs, g);
     println!("{:?}", bruh);
     
     
