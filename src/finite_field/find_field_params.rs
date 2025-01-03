@@ -90,16 +90,6 @@ pub fn find_primitive_element() {
     }
 }
 
-// Function finds the generator of a cyclic subgroup of the field G. We want a subgroup with and order equal to the length of the trace: 128,
-// so the generator g needs the following properties:
-// - g^i mod p != 1 for integers 1 <= i <= 127
-// - g^128 mod p == 1
-// Similarly to find_primitive_element, the function starts at 2 and checks until it finds a valid g.
-
-// We actually dont even need this,
-// Mention some fermatts little theorem and the math behind the fact that g^{(p-1)/128} is the generator of a subgroup of order 128
-
-
 // Function performs bitwise modular exponentiation to be able to calculate a^b mod p when b is very large.
 // It iterates over the bits that make up the exponent. The result starts a 1 and gets multiplied by the base if the current bit is a 1.
 // Every round the base is squared because moveing to the next bit of the exponent is really just multiplying the exponent by two, hence 

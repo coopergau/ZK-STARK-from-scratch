@@ -22,10 +22,6 @@ fn main() {
     let bruh = fft::interpolate_poly(poly_evaluations, inverse_g);
     println!("{:?}", bruh);
     
-    let inverse_length = Fp::from_u128(4).invert().unwrap();
-    let norm_bruh: Vec<Fp> = bruh.iter().map(|&x| x * inverse_length).collect();
-    println!("{:?}", norm_bruh);
-    
     
     //un comment get mimc constants 
     
