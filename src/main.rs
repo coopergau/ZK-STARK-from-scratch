@@ -11,6 +11,8 @@ use crate::trace::create_trace::mimc_output;
 use crate::prover::proof;
 
 const MIMC_ROUNDS: u32 = 127;
+const G_DOMAIN_SIZE: u128 = 128;
+const L_DOMAIN_SIZE: u128 = 4096;
 
 fn main() {
     // Private input to the proof
