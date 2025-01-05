@@ -18,25 +18,33 @@ x_127 = O
 
 3. Polynomial Constraints:
 f: G -> F
-F modulus - 226156424291633194186662080095093570025917938800079226639565593765455339521 or (64 + 2^240)(128) + 1
+F modulus (p) - 226156424291633194186662080095093570025917938800079226639565593765455339521 or (64 + 2^240)(128) + 1
 F generator - 7
 G order - 128
 g (G generator) - 7^{(p-1)/128} mod p
-Use a smaller F like a u64 or u32 and just find the other numbers yourself
-either find the generator of the whole field as well and use ff crate, or just impliment originial ff arithmetic
-use the winterfell field modulases as a start, like the u64 one
 
 f(g^0) = I,
 f(g^i) = (f(g^{i-1}) + k_{i-1})^3 for 1 <= i <= 127,
 f(g^127) = O
-Use FFT to get f.
+Use FFT to get f in form of coefficients.
 
 4. Reed-Soloman Coding
 - Extend the evaluation domain of f to L so f:L->F.
-L: [1, 2^254] Paper uses [1, F] but I think it's good for it to be of order of a power of 2.
-Make L [1, 4096] because its decently big and is a factor of p-1 (does it even have ot be)
+|L| = 4096 because its decently big but much less than p.
+So the generator of L is 7^{(p-1)/4096} mod p. This will create a superset of G that has 4096 elements.
+Take the coefficient form of f and extend it over L to get the polynomial in evaluation form over L.
 
-5. 
+5. Constraint Polynomial
+- Compute the constraint polynomials c:L->F
 
 ## What to do right now
-- Make fuzz tests for the FFT and IFFT
+- Interpolate f using the points over G
+- compute the points over L
+
+## Proof generation steps
+1. User submits I and O
+2. Trace gets generated and f poly is interpolated
+3. f evaluations get extended over domain L
+4. Create constraint polynomials
+5. Create composite polynomial from constraint polys
+Then commitments and querying and stuff

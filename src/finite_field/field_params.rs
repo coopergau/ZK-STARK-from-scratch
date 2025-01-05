@@ -6,6 +6,5 @@ use ff::PrimeField;
 #[PrimeFieldModulus = "226156424291633194186662080095093570025917938800079226639565593765455339521"]
 #[PrimeFieldGenerator = "7"]
 #[PrimeFieldReprEndianness = "little"]
-//#[derive(Debug)]
 pub struct Fp([u64; 4]);
 
