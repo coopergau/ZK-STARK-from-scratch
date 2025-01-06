@@ -8,12 +8,12 @@ Zero Knowledge STARK protocol for proving the knowledge of the pre image to a n 
 The prover knows numbers I and O such that making I the input to the MiMC hash function gives O as output. I is known only to the prover, O is public. the MiMC hash function has these specific params:
 - 127 rounds. (This means the trace will be 128 elements in the polynomial f and a power of 2 is good for the FFT.)
 - The first round uses the user submitted number (I) as input starts as the first input.
-- Every round adds the predetermined constant to the input then cubes it to create the round output.
+- Every round adds the predetermined constant k to the input then cubes it to create the round output.
 - The output from every round is used as the input for the next round until the last round is complete and the final output is returned.
 
 2. CI constraints:
 x_0 = I,
-x_i = (x_{i-1} + k_{i-1})^3 for integers i, 1 <= i <= 127
+x_i = (x_{i-1} + k)^3 for integers i, 1 <= i <= 127
 x_127 = O
 
 3. Polynomial Constraints:
@@ -24,9 +24,13 @@ G order - 128
 g (G generator) - 7^{(p-1)/128} mod p
 
 f(g^0) = I,
-f(g^i) = (f(g^{i-1}) + k_{i-1})^3 for 1 <= i <= 127,
+f(g^i) = (f(g^{i-1}) + k)^3 for 1 <= i <= 127,
 f(g^127) = O
-Use FFT to get f in form of coefficients.
+
+These create three constraint polynomials:
+1. f(x) - I = 0, for x = g
+2. f(gx) - (f(x) + k)^3 = 0, for x = g^i, 0 <= i <= 127
+3. f(x) - O = 0, for x = g^127
 
 4. Reed-Soloman Coding
 - Extend the evaluation domain of f to L so f:L->F.
@@ -38,6 +42,7 @@ Take the coefficient form of f and extend it over L to get the polynomial in eva
 - Compute the constraint polynomials c:L->F
 
 ## What to do right now
+- Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) so the queries can be any point in L
 - Interpolate f using the points over G
 - compute the points over L
 

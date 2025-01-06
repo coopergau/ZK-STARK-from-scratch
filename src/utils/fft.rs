@@ -1,5 +1,4 @@
-use crate::ff::PrimeField;
-use crate::ff::Field;
+use crate::ff::{PrimeField, Field};
 
 /* The Fast Fourier Transform (FFT) and inverse-FFT can be used to efficiently evaluate and interpolate polynomials over the domain of a cyclic subgroup.
 The FFT is used for evaluation and the IFFT is used to interpolation. Functions are generic to support testing over different prime fields. */
@@ -26,7 +25,7 @@ pub fn evaluate_poly<F: PrimeField>(coeffs: Vec<F>, omega: F) -> Vec<F> {
 
     // Combine even and odd terms using the FFT butterfly operation.
     let mut y: Vec<F> = vec![Field::ZERO; length];
-    let mut current_omega = F::from_u128(1);
+    let mut current_omega = F::from(1);
     for i in 0..length/2 {
         let odd_term = current_omega * y_odd[i];
         y[i] = y_even[i] + odd_term;
@@ -61,7 +60,7 @@ pub fn interpolate_poly<F: PrimeField>(evals: Vec<F>, inverse_omega: F) -> Vec<F
 
     // Combine even and odd terms using the FFT butterfly operation.
     let mut y: Vec<F> = vec![Field::ZERO; length];
-    let mut current_omega = F::from_u128(1);
+    let mut current_omega = F::from(1);
     for i in 0..length/2 {
         let odd_term = current_omega * y_odd[i];
         y[i] = y_even[i] + odd_term;
@@ -70,7 +69,7 @@ pub fn interpolate_poly<F: PrimeField>(evals: Vec<F>, inverse_omega: F) -> Vec<F
     }
 
     // Normalize the vector
-    let inverse_length = F::from_u128(length as u128).invert().unwrap();
+    let inverse_length = F::from(length as u64).invert().unwrap();
     y.iter_mut().for_each(|x| *x = *x * inverse_length);
 
     return y;
@@ -92,14 +91,14 @@ mod tests {
     #[PrimeFieldReprEndianness = "little"]
     pub struct FpSmall([u64; 1]);
    
-    pub static G: Lazy<FpSmall> = Lazy::new(|| FpSmall::from_u128(4));
+    pub static G: Lazy<FpSmall> = Lazy::new(|| FpSmall::from(4));
     pub static G_INVERSE: Lazy<FpSmall> = Lazy::new(|| FpSmall::invert(&G).unwrap());
 
     #[test]
     // The polynomial 5 + x + 13x^2 + 16x^3 has evaluations f(1)=1, f(4)=0, f(13)=1, and f(16)=1.
     fn test_evaluate_poly_basic() {
-        let poly_coeffs: Vec<FpSmall> = vec![FpSmall::from_u128(5), FpSmall::from_u128(1), FpSmall::from_u128(13), FpSmall::from_u128(16)];
-        let expected_evals: Vec<FpSmall> = vec![FpSmall::from_u128(1), FpSmall::from_u128(0), FpSmall::from_u128(1), FpSmall::from_u128(1)];
+        let poly_coeffs: Vec<FpSmall> = vec![FpSmall::from(5), FpSmall::from(1), FpSmall::from(13), FpSmall::from(16)];
+        let expected_evals: Vec<FpSmall> = vec![FpSmall::from(1), FpSmall::from(0), FpSmall::from(1), FpSmall::from(1)];
         let actual_evals = evaluate_poly(poly_coeffs, *G);
         assert_eq!(actual_evals, expected_evals);
     }
@@ -107,8 +106,8 @@ mod tests {
     #[test]
     // The evaluations f(1)=1, f(4)=0, f(13)=1, and f(16)=1 should return the coefficients of 5 + x + 13x^2 + 16x^3. 
     fn test_interpolate_poly_basic() {
-        let poly_evals: Vec<FpSmall> = vec![FpSmall::from_u128(1), FpSmall::from_u128(0), FpSmall::from_u128(1), FpSmall::from_u128(1)];
-        let expected_coeffs: Vec<FpSmall> = vec![FpSmall::from_u128(5), FpSmall::from_u128(1), FpSmall::from_u128(13), FpSmall::from_u128(16)];
+        let poly_evals: Vec<FpSmall> = vec![FpSmall::from(1), FpSmall::from(0), FpSmall::from(1), FpSmall::from(1)];
+        let expected_coeffs: Vec<FpSmall> = vec![FpSmall::from(5), FpSmall::from(1), FpSmall::from(13), FpSmall::from(16)];
         let actual_coeffs = interpolate_poly(poly_evals, *G_INVERSE);
         assert_eq!(actual_coeffs, expected_coeffs);
     }

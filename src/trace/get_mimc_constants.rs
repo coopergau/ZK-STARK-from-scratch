@@ -1,3 +1,5 @@
+// Doing it this way would mean one constrain polynomial per constant which is too many ofr this demo so probably remove this file at the end
+
 use rand::rngs::OsRng;
 use crate::finite_field::field_params::{Fp, FpRepr};
 use crate::ff::{Field, PrimeField};

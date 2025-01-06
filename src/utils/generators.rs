@@ -1,7 +1,7 @@
 use crate::finite_field::field_params::Fp;
 use crate::ff::{PrimeField, Field};
 
-// Returns a subgroup generator of the form g^{(p-1) / group_order} where g is the prime field generator 7.
+// Returns a subgroup generator of the form 7^{(p-1) / group_order}.
 pub fn get_generator(group_order: Fp) -> Fp {
     let generator_exponent_repr = (-Fp::ONE * group_order.invert().unwrap()).to_repr();
     let generator_exponent_bytes = generator_exponent_repr.as_ref();
