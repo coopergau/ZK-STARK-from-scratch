@@ -14,13 +14,13 @@ pub fn generate_proof(mimc_input: Fp, mimc_output: Fp) {
     let g_order = Fp::from(G_DOMAIN_SIZE);
     let g_generator = generators::get_generator(g_order);
     let g_generator_inverse = g_generator.invert().unwrap();
-    let mut f_poly = fft::interpolate_poly(trace, g_generator_inverse);
+    let mut f_poly_coeffs = fft::interpolate_poly(trace, g_generator_inverse);
     
     // Low degree extension (LDE) - Evaluate the polynomial over the larger domain L.
     let l_order = Fp::from(L_DOMAIN_SIZE);
     let l_generator = generators::get_generator(l_order);
-    f_poly.resize(L_DOMAIN_SIZE as usize, Field::ZERO); // Add padding in order to extend the evaluation domain.
-    let l_evaluations = fft::evaluate_poly(f_poly, l_generator);
+    f_poly_coeffs.resize(L_DOMAIN_SIZE as usize, Field::ZERO); // Add padding in order to extend the evaluation domain.
+    let l_evaluations = fft::evaluate_poly(f_poly_coeffs, l_generator);
     println!("{:?}", l_evaluations);    
     // Commit to the LDE of the polynomial f.
 

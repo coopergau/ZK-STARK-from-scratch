@@ -2,11 +2,11 @@ use crate::finite_field::field_params::Fp;
 use crate::ff::{PrimeField, Field};
 
 // Returns a subgroup generator of the form 7^{(p-1) / group_order}.
-pub fn get_generator(group_order: Fp) -> Fp {
-    let generator_exponent_repr = (-Fp::ONE * group_order.invert().unwrap()).to_repr();
+pub fn get_generator<F: PrimeField>(group_order: F) -> F {
+    let generator_exponent_repr = (-F::ONE * group_order.invert().unwrap()).to_repr();
     let generator_exponent_bytes = generator_exponent_repr.as_ref();
     let generator_exponent = bytes_to_u64(generator_exponent_bytes);
-    let generator = Fp::MULTIPLICATIVE_GENERATOR.pow(generator_exponent);
+    let generator = F::MULTIPLICATIVE_GENERATOR.pow(generator_exponent);
 
     generator
 }
