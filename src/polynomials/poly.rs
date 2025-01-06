@@ -17,7 +17,7 @@ impl<F: PrimeField> Polynomial<F> {
         self.coefficients.len()
     }
 
-    pub fn evaluate(&self, x: F) -> F {
+    pub fn evaluate(&self, x: &F) -> F {
         // Horner's method
         let mut result = F::ZERO;
         for &coeff in self.coefficients.iter().rev() {
@@ -26,7 +26,7 @@ impl<F: PrimeField> Polynomial<F> {
         result
     }
 
-    pub fn add(&self, other_poly: Polynomial<F>) -> Polynomial<F> {
+    pub fn add(&self, other_poly: &Polynomial<F>) -> Polynomial<F> {
         let max_length = std::cmp::max(self.len(), other_poly.len());
         let mut new_coeffs: Vec<F> = Vec::new();
         for i in 0..max_length {
@@ -37,7 +37,7 @@ impl<F: PrimeField> Polynomial<F> {
         Polynomial::new(new_coeffs)
     }
 
-    pub fn sub(&self, other_poly: Polynomial<F>) -> Polynomial<F> {
+    pub fn sub(&self, other_poly: &Polynomial<F>) -> Polynomial<F> {
         let max_length = std::cmp::max(self.len(), other_poly.len());
         let mut new_coeffs: Vec<F> = Vec::new();
         for i in 0..max_length {
@@ -52,11 +52,11 @@ impl<F: PrimeField> Polynomial<F> {
        1. Converts both polynomials into evaluation form.
        2. Multiplies the evaluations that are from the same x value to get one evaluation vector.
        3. Converts that vector back into coefficient form. */
-    pub fn mul(&self, other_poly: Polynomial<F>) -> Polynomial<F> {
+    pub fn mul(&self, other_poly: &Polynomial<F>) -> Polynomial<F> {
         /* Multiplying two polynomials a(x) and b(x) will produce a new polynomial c(x) where deg(c) = deg(a) * deg(b).
            So we need to find the smallest power of 2 that is greater than or equal to deg(self) * deg(other_poly), call it n. */
-        let new_degree = self.len() * other_poly.len();
-        let length = new_degree.next_power_of_two();
+        let new_length = self.len() + other_poly.len() - 1;
+        let length = new_length.next_power_of_two();
         let length_fp = F::from(length as u64);
 
         // Pad the coefficient vectors to be the size of n.
@@ -88,5 +88,46 @@ impl<F: PrimeField> Polynomial<F> {
         }
 
         Polynomial::new(product_poly)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::rngs::OsRng;
+    use rand::Rng;
+
+    #[test]
+    /* Test that the mul function, which uses the FFT, gets the same product as multiplying each coefficient in one polynomial 
+       by each coefficient in the other polynomial.
+       Test runs for 100 random pairs of polynomials of length 1 to 100. */
+    fn test_fft_mul() {
+        for _ in 0..100 {
+            let length1 = OsRng.gen_range(1..=100);
+            let length2 = OsRng.gen_range(1..=100);
+            let poly1_vec: Vec<Fp> = (0..length1).map(|_| Fp::random(OsRng)).collect();
+            let poly2_vec: Vec<Fp> = (0..length2).map(|_| Fp::random(OsRng)).collect();
+            
+            // Naive multiplication
+            let mut product_vec = vec![Fp::ZERO; length1 + length2 - 1];
+            for i in 0..length1 {
+                for j in 0..length2 {
+                    product_vec[i + j] = product_vec[i + j] + (poly1_vec[i] * poly2_vec[j])
+                }
+            }
+            // Remove ending zeros
+            if let Some(index) = product_vec.iter().rposition(|&x| x != Fp::ZERO) {
+                product_vec.truncate(index + 1);
+            } else {
+                product_vec = vec![Fp::ZERO];
+            }
+            
+            // FFT muliplication
+            let poly1 = Polynomial::new(poly1_vec);
+            let poly2 = Polynomial::new(poly2_vec);
+            let fft_product = poly1.mul(&poly2);
+            
+            assert_eq!(fft_product.coefficients, product_vec);
+        }
     }
 }

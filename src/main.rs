@@ -28,7 +28,7 @@ fn main() {
     let coeffs2 = vec![Fp::from(4), Fp::from(3)];
     let q = poly::Polynomial::new(coeffs2);
     
-    let sum = p.mul(q);
+    let sum = p.mul(&q);
     println!("{:?}", sum);
    
 }

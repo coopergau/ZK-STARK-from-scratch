@@ -130,6 +130,7 @@ mod tests {
     
     #[test]
     // Tests that applying the IFFT of the FFT of given set of coefficients returns the same set of coefficients.
+    // Test runs for 100 random polynomials of length 16.
     fn test_random_eval_then_interpolate(){
         for _ in 0..100 {
             // Generate random filed generator and inverse
@@ -137,7 +138,7 @@ mod tests {
             let generator_inverse = Fp::invert(&random_generator).unwrap();
             
             // Generate random polynomial coefficients
-            let initial_coeffs: Vec<Fp> = (0..8).map(|_| Fp::random(OsRng)).collect();
+            let initial_coeffs: Vec<Fp> = (0..16).map(|_| Fp::random(OsRng)).collect();
             
             // Evaluate the polynomial at generator points
             let evaluations = evaluate_poly(initial_coeffs.clone(), random_generator);
