@@ -1,4 +1,4 @@
-use ff::PrimeField;
+use ff::{PrimeField, Field};
 
 #[derive(PrimeField)]
 // (64 + 2^240)(128) + 1

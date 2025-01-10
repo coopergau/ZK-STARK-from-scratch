@@ -2,15 +2,32 @@ use crate::finite_field::field_params::Fp;
 use crate::ff::{PrimeField, Field};
 use crate::utils::{generators, fft};
 
+// Divide function for PrimeFields, used in polynomial division.
+pub fn field_divide<F: PrimeField>(dividend: &F, divisor: &F) -> F {
+    let inverse = F::invert(&divisor).unwrap();
+    *dividend * inverse
+}
+
 #[derive(Debug, Clone)]
-pub struct Polynomial<F: PrimeField> {
+pub struct Polynomial<F> {
     coefficients: Vec<F>,
 }
 
 impl<F: PrimeField> Polynomial<F> {
     
     pub fn new(coefficients: Vec<F>) -> Polynomial<F> {
-        Self { coefficients }
+        if *coefficients.last().unwrap() == F::ZERO {
+            let mut new_coeffs = coefficients.clone();
+            while let Some(&last) = new_coeffs.last() {
+                if last == F::ZERO && new_coeffs.len() > 1 {
+                    new_coeffs.pop();
+                } else {
+                    break;
+                }
+            }
+            return Self { coefficients: new_coeffs };
+        }
+        return Self { coefficients };
     }
 
     pub fn len(&self) -> usize {
@@ -34,6 +51,16 @@ impl<F: PrimeField> Polynomial<F> {
             let coeff2 = if i < other_poly.len() {other_poly.coefficients[i]} else { F::ZERO };
             new_coeffs.push(coeff1 + coeff2);
         }
+
+        // Remove trailing zeros.
+        while let Some(&last) = new_coeffs.last() {
+            if last == F::ZERO {
+                new_coeffs.pop();
+            } else {
+                break;
+            }
+        }
+
         Polynomial::new(new_coeffs)
     }
 
@@ -45,6 +72,16 @@ impl<F: PrimeField> Polynomial<F> {
             let coeff2 = if i < other_poly.len() {other_poly.coefficients[i]} else { F::ZERO };
             new_coeffs.push(coeff1 - coeff2);
         }
+
+        // Remove trailing zeros.
+        while let Some(&last) = new_coeffs.last() {
+            if last == F::ZERO {
+                new_coeffs.pop();
+            } else {
+                break;
+            }
+        }
+        
         Polynomial::new(new_coeffs)
     }
 
@@ -89,6 +126,57 @@ impl<F: PrimeField> Polynomial<F> {
 
         Polynomial::new(product_poly)
     }
+
+    // Function divides self by the divisor and returns the tuple in the form (quotient, remainder)
+    // This shit does not work, write your own
+    pub fn div(&self, divisor_poly: &Polynomial<F>) -> (Polynomial<F>, Polynomial<F>) {
+        let mut dividend_vec = self.coefficients.clone();
+        let divisor = &divisor_poly.coefficients;
+        let divisor_degree = divisor.len() - 1;
+        
+        // Can't divide by zero
+        if divisor.is_empty() || divisor.iter().all(|&x| x == F::ZERO) {
+            panic!("Cannot divide by zero.");
+        }
+
+        // Just scale the dividend if the divisor is a constant.
+        if divisor.len() == 1 {
+            let inverse_divisor = F::invert(&divisor[0]).unwrap();
+            let scaled_dividend_vec = dividend_vec.iter().map(|&x| x * inverse_divisor).collect();
+            let remainder = vec![F::ZERO];
+            return (Polynomial::new(scaled_dividend_vec), Polynomial::new(remainder));
+        }
+
+        // The loop below calculates quotient terms starting with the highest degree.
+        let mut quotient: Vec<F> = Vec::new();
+
+        // While the degree of the dividend is at least the degree of the divisor.
+        while dividend_vec.len() - 1 >= divisor_degree {
+            // Ensure the loop exits if the dividend becomes empty.
+            if dividend_vec.is_empty() {
+                break;
+            }
+
+            let dividend_degree = dividend_vec.len() - 1;
+            
+            // Compute the new term in the quotient.
+            let new_term = field_divide(&dividend_vec[dividend_degree], &divisor[divisor_degree]);
+            quotient.insert(0, new_term);
+            
+            // Subtract (new_term * divisor) from the dividend.
+            let mut subtract_vec: Vec<F> = divisor.iter().map(|&x| x * new_term).collect();
+            subtract_vec.splice(0..0, vec![F::ZERO; dividend_degree - divisor_degree]);
+            
+            dividend_vec = dividend_vec.iter()
+            .zip(subtract_vec.iter())
+            .map(|(a, b)| *a - b)
+            .collect();
+            dividend_vec.pop();
+        }
+                
+        // The remaining dividend is the remainder
+        return (Polynomial::new(quotient), Polynomial::new(dividend_vec))
+    }
 }
 
 #[cfg(test)]
@@ -96,6 +184,76 @@ mod tests {
     use super::*;
     use rand::rngs::OsRng;
     use rand::Rng;
+
+    #[test]
+    // Test that creating a new polyomial removes trailing zeros.
+    fn test_remove_trailing_zeros() {
+        let coeffs = vec![Fp::from(20), Fp::from(9), Fp::from(1), Fp::from(0), Fp::from(0), Fp::from(0)];
+        let poly = Polynomial::new(coeffs);
+        let expected_coeffs =  vec![Fp::from(20), Fp::from(9), Fp::from(1)];
+
+        assert_eq!(expected_coeffs, poly.coefficients);
+    }
+
+    #[test]
+    // Test the polynomial add function works properly.
+    fn test_add() {
+        for _ in 0..50 {
+            let length1 = OsRng.gen_range(1..=100);
+            let length2 = OsRng.gen_range(1..=100);
+            let mut poly1_vec: Vec<Fp> = (0..length1).map(|_| Fp::random(OsRng)).collect();
+            let mut poly2_vec: Vec<Fp> = (0..length2).map(|_| Fp::random(OsRng)).collect();
+
+            let poly1 = Polynomial::new(poly1_vec.clone());
+            let poly2 = Polynomial::new(poly2_vec.clone());
+            let poly_sum = poly1.add(&poly2);
+
+            // Naive adding.
+            // Add leading zeros so the vecs are the same length.
+            if length1 > length2 {
+                poly2_vec.resize(length1, Fp::ZERO);
+            } else if length2 > length1 {
+                poly1_vec.resize(length2, Fp::ZERO);
+            }
+
+            let mut naive_sum_vec: Vec<Fp> = Vec::new();
+            for i in 0..poly1_vec.len() {
+                naive_sum_vec.push(poly1_vec[i] + poly2_vec[i]);
+            }
+
+            assert_eq!(poly_sum.coefficients, naive_sum_vec);
+        }
+    }
+    
+    #[test]
+    // Test the polynomial subtract function works properly.
+    fn test_sub() {
+        for _ in 0..50 {
+            let length1 = OsRng.gen_range(1..=100);
+            let length2 = OsRng.gen_range(1..=100);
+            let mut poly1_vec: Vec<Fp> = (0..length1).map(|_| Fp::random(OsRng)).collect();
+            let mut poly2_vec: Vec<Fp> = (0..length2).map(|_| Fp::random(OsRng)).collect();
+
+            let poly1 = Polynomial::new(poly1_vec.clone());
+            let poly2 = Polynomial::new(poly2_vec.clone());
+            let poly_diff = poly1.sub(&poly2);
+
+            // Naive adding.
+            // Add leading zeros so the vecs are the same length.
+            if length1 > length2 {
+                poly2_vec.resize(length1, Fp::ZERO);
+            } else if length2 > length1 {
+                poly1_vec.resize(length2, Fp::ZERO);
+            }
+
+            let mut naive_diff_vec: Vec<Fp> = Vec::new();
+            for i in 0..poly1_vec.len() {
+                naive_diff_vec.push(poly1_vec[i] - poly2_vec[i]);
+            }
+
+            assert_eq!(poly_diff.coefficients, naive_diff_vec);
+        }
+    }
 
     #[test]
     /* Test that the mul function, which uses the FFT, gets the same product as multiplying each coefficient in one polynomial 
@@ -129,5 +287,62 @@ mod tests {
             
             assert_eq!(fft_product.coefficients, product_vec);
         }
+    }
+
+    #[test]
+    /* Test takes two random Polynomials, divides one by the other, then multiplies the divisor 
+       polynomial by the quotient and adds the remainder. This process should result in the original
+       dividend polynomial. */
+    fn tests_random_poly_division() {
+        for _ in 0..50 {
+            let length1 = OsRng.gen_range(1..=100);
+            let length2 = OsRng.gen_range(1..=100);
+
+            let mut dividend_vec: Vec<Fp> = Vec::new();
+            let mut divisor_vec: Vec<Fp> = Vec::new();
+
+            if length1 > length2 {
+                dividend_vec = (0..length1).map(|_| Fp::random(OsRng)).collect();
+                divisor_vec = (0..length2).map(|_| Fp::random(OsRng)).collect();
+            } else {
+                dividend_vec = (0..length2).map(|_| Fp::random(OsRng)).collect();
+                divisor_vec = (0..length1).map(|_| Fp::random(OsRng)).collect();
+            }
+
+            let dividend = Polynomial::new(dividend_vec);
+            let divisor = Polynomial::new(divisor_vec);
+
+            let (quotient, remainder) = dividend.div(&divisor);
+            
+            let product = divisor.mul(&quotient);
+            let reconstructed_dividend = product.add(&remainder);
+        
+            assert_eq!(dividend.coefficients, reconstructed_dividend.coefficients);
+        }
+    }
+
+    #[test]
+    /* Test takes two random Polynomials, multiplies them together, takes the product and divided it by
+       one of the polynomials. This process should result in the other random polynomial and a remainder
+       of zero. */
+    fn tests_poly_division_with_zero_remainder() {
+        for _ in 0..50 {
+            let length1 = OsRng.gen_range(1..=100);
+            let length2 = OsRng.gen_range(1..=100);
+
+            let poly1_vec: Vec<Fp> = (0..length1).map(|_| Fp::random(OsRng)).collect();
+            let poly2_vec: Vec<Fp> = (0..length2).map(|_| Fp::random(OsRng)).collect();
+
+            let poly1 = Polynomial::new(poly1_vec);
+            let poly2 = Polynomial::new(poly2_vec);
+    
+            let product = poly1.mul(&poly2);
+            let (quotient, remainder) = product.div(&poly2);
+
+            assert_eq!(quotient.coefficients, poly1.coefficients);
+            assert_eq!(remainder.coefficients, vec![Fp::ZERO]);
+           
+        }
+
     }
 }

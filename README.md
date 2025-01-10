@@ -43,7 +43,7 @@ Take the coefficient form of f and extend it over L to get the polynomial in eva
 
 ## What to do right now
 - Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) so the queries can be any point in L
-- make poly division function
+- make poly division function - Create a divide function for all Prime Fields
 - add some tests for poly mul and div
 
 ## Proof generation steps

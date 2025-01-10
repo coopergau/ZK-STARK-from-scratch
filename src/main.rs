@@ -22,13 +22,19 @@ fn main() {
     let public_input = mimc_output(&private_input, MIMC_ROUNDS);
     //proof::generate_proof(private_input, public_input);
 
-    let coeffs = vec![Fp::from(5), Fp::from(1)];
+    let coeffs = vec![Fp::from(20), Fp::from(9), Fp::from(2)];
     let p = poly::Polynomial::new(coeffs);
     
-    let coeffs2 = vec![Fp::from(4), Fp::from(3)];
+    let coeffs2 = vec![Fp::from(4), Fp::from(1)];
     let q = poly::Polynomial::new(coeffs2);
     
-    let sum = p.mul(&q);
-    println!("{:?}", sum);
-   
+    let (quot, rem) = p.div(&q);
+    println!("{:?}", quot);
+    println!("{:?}", rem);
+    
+    let product = quot.mul(&q);
+    let actual = product.add(&rem);
+
+    println!("{:?}", actual);
+    println!("{:?}", p);
 }
