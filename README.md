@@ -27,8 +27,8 @@ f(g^0) = I,
 f(g^i) = (f(g^{i-1}) + k)^3 for 1 <= i <= 127,
 f(g^127) = O
 
-These create three constraint polynomials:
-1. f(x) - I = 0, for x = g
+These create three constraint polynomials which we will create:
+1. f(x) - I = 0, for x = g^0
 2. f(gx) - (f(x) + k)^3 = 0, for x = g^i, 0 <= i <= 127
 3. f(x) - O = 0, for x = g^127
 
@@ -40,11 +40,17 @@ Take the coefficient form of f and extend it over L to get the polynomial in eva
 
 5. Constraint Polynomial
 - Compute the constraint polynomials c:L->F
+In this circuit we have the three constraint polynomials:
+1. c_1(x) = f(x) - I, which has a root at x = g^0
+2. c_2(x) = f(gx) - (f(x) + k)^3, which has roots x = g^i, 0 <= i <= 127
+3. c_3(x) = f(x) - O, which has a root at x = g^127 
+
+6. Composite Polynomial
+
 
 ## What to do right now
 - Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) so the queries can be any point in L
-- make poly division function - Create a divide function for all Prime Fields
-- add some tests for poly mul and div
+- constraint polys
 
 ## Proof generation steps
 1. User submits I and O
@@ -53,3 +59,5 @@ Take the coefficient form of f and extend it over L to get the polynomial in eva
 4. Create constraint polynomials
 5. Create composite polynomial from constraint polys
 Then commitments and querying and stuff
+
+remove get_mimc_constants

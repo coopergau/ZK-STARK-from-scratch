@@ -10,13 +10,14 @@ pub fn field_divide<F: PrimeField>(dividend: &F, divisor: &F) -> F {
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<F> {
-    coefficients: Vec<F>,
+    pub coefficients: Vec<F>,
 }
 
 impl<F: PrimeField> Polynomial<F> {
     
-    pub fn new(coefficients: Vec<F>) -> Polynomial<F> {
+    pub fn new(coefficients: &Vec<F>) -> Polynomial<F> {
         if *coefficients.last().unwrap() == F::ZERO {
+            println!("{:?}", "yes");
             let mut new_coeffs = coefficients.clone();
             while let Some(&last) = new_coeffs.last() {
                 if last == F::ZERO && new_coeffs.len() > 1 {
@@ -27,7 +28,7 @@ impl<F: PrimeField> Polynomial<F> {
             }
             return Self { coefficients: new_coeffs };
         }
-        return Self { coefficients };
+        return Self { coefficients: coefficients.to_vec() };
     }
 
     pub fn len(&self) -> usize {
@@ -52,16 +53,7 @@ impl<F: PrimeField> Polynomial<F> {
             new_coeffs.push(coeff1 + coeff2);
         }
 
-        // Remove trailing zeros.
-        while let Some(&last) = new_coeffs.last() {
-            if last == F::ZERO {
-                new_coeffs.pop();
-            } else {
-                break;
-            }
-        }
-
-        Polynomial::new(new_coeffs)
+        Polynomial::new(&new_coeffs)
     }
 
     pub fn sub(&self, other_poly: &Polynomial<F>) -> Polynomial<F> {
@@ -72,17 +64,8 @@ impl<F: PrimeField> Polynomial<F> {
             let coeff2 = if i < other_poly.len() {other_poly.coefficients[i]} else { F::ZERO };
             new_coeffs.push(coeff1 - coeff2);
         }
-
-        // Remove trailing zeros.
-        while let Some(&last) = new_coeffs.last() {
-            if last == F::ZERO {
-                new_coeffs.pop();
-            } else {
-                break;
-            }
-        }
         
-        Polynomial::new(new_coeffs)
+        Polynomial::new(&new_coeffs)
     }
 
     /* Polynomial multiplication using the FFT.
@@ -90,7 +73,7 @@ impl<F: PrimeField> Polynomial<F> {
        2. Multiplies the evaluations that are from the same x value to get one evaluation vector.
        3. Converts that vector back into coefficient form. */
     pub fn mul(&self, other_poly: &Polynomial<F>) -> Polynomial<F> {
-        /* Multiplying two polynomials a(x) and b(x) will produce a new polynomial c(x) where deg(c) = deg(a) * deg(b).
+        /* Multiplying two polynomials a(x) and b(x) will produce a new polynomial c(x) where deg(c) = deg(a) + deg(b).
            So we need to find the smallest power of 2 that is greater than or equal to deg(self) * deg(other_poly), call it n. */
         let new_length = self.len() + other_poly.len() - 1;
         let length = new_length.next_power_of_two();
@@ -107,8 +90,8 @@ impl<F: PrimeField> Polynomial<F> {
         let inverse_root_of_unity = root_of_untiy.invert().unwrap();
 
         // Convert each polynomial into evaluation form.
-        let evals1 = fft::evaluate_poly(coeffs1, root_of_untiy);
-        let evals2 = fft::evaluate_poly(coeffs2, root_of_untiy);
+        let evals1 = fft::evaluate_poly(&coeffs1, root_of_untiy);
+        let evals2 = fft::evaluate_poly(&coeffs2, root_of_untiy);
 
         // Multiply the evaluations.
         let mut product: Vec<F> = Vec::new();
@@ -117,14 +100,14 @@ impl<F: PrimeField> Polynomial<F> {
         }
 
         // Convert back into coefficient form and remove any trailing zeros.
-        let mut product_poly = fft::interpolate_poly(product, inverse_root_of_unity);
+        let mut product_poly = fft::interpolate_poly(&product, inverse_root_of_unity);
         if let Some(index) = product_poly.iter().rposition(|&x| x != F::ZERO) {
             product_poly.truncate(index + 1);
         } else {
             product_poly = vec![F::ZERO];
         }
 
-        Polynomial::new(product_poly)
+        Polynomial::new(&product_poly)
     }
 
     // Function divides self by the divisor and returns the tuple in the form (quotient, remainder)
@@ -144,7 +127,7 @@ impl<F: PrimeField> Polynomial<F> {
             let inverse_divisor = F::invert(&divisor[0]).unwrap();
             let scaled_dividend_vec = dividend_vec.iter().map(|&x| x * inverse_divisor).collect();
             let remainder = vec![F::ZERO];
-            return (Polynomial::new(scaled_dividend_vec), Polynomial::new(remainder));
+            return (Polynomial::new(&scaled_dividend_vec), Polynomial::new(&remainder));
         }
 
         // The loop below calculates quotient terms starting with the highest degree.
@@ -175,7 +158,7 @@ impl<F: PrimeField> Polynomial<F> {
         }
                 
         // The remaining dividend is the remainder
-        return (Polynomial::new(quotient), Polynomial::new(dividend_vec))
+        return (Polynomial::new(&quotient), Polynomial::new(&dividend_vec))
     }
 }
 
@@ -189,7 +172,7 @@ mod tests {
     // Test that creating a new polyomial removes trailing zeros.
     fn test_remove_trailing_zeros() {
         let coeffs = vec![Fp::from(20), Fp::from(9), Fp::from(1), Fp::from(0), Fp::from(0), Fp::from(0)];
-        let poly = Polynomial::new(coeffs);
+        let poly = Polynomial::new(&coeffs);
         let expected_coeffs =  vec![Fp::from(20), Fp::from(9), Fp::from(1)];
 
         assert_eq!(expected_coeffs, poly.coefficients);
@@ -204,8 +187,8 @@ mod tests {
             let mut poly1_vec: Vec<Fp> = (0..length1).map(|_| Fp::random(OsRng)).collect();
             let mut poly2_vec: Vec<Fp> = (0..length2).map(|_| Fp::random(OsRng)).collect();
 
-            let poly1 = Polynomial::new(poly1_vec.clone());
-            let poly2 = Polynomial::new(poly2_vec.clone());
+            let poly1 = Polynomial::new(&poly1_vec);
+            let poly2 = Polynomial::new(&poly2_vec);
             let poly_sum = poly1.add(&poly2);
 
             // Naive adding.
@@ -234,11 +217,11 @@ mod tests {
             let mut poly1_vec: Vec<Fp> = (0..length1).map(|_| Fp::random(OsRng)).collect();
             let mut poly2_vec: Vec<Fp> = (0..length2).map(|_| Fp::random(OsRng)).collect();
 
-            let poly1 = Polynomial::new(poly1_vec.clone());
-            let poly2 = Polynomial::new(poly2_vec.clone());
+            let poly1 = Polynomial::new(&poly1_vec);
+            let poly2 = Polynomial::new(&poly2_vec);
             let poly_diff = poly1.sub(&poly2);
 
-            // Naive adding.
+            // Naive subtracting.
             // Add leading zeros so the vecs are the same length.
             if length1 > length2 {
                 poly2_vec.resize(length1, Fp::ZERO);
@@ -281,8 +264,8 @@ mod tests {
             }
             
             // FFT muliplication
-            let poly1 = Polynomial::new(poly1_vec);
-            let poly2 = Polynomial::new(poly2_vec);
+            let poly1 = Polynomial::new(&poly1_vec);
+            let poly2 = Polynomial::new(&poly2_vec);
             let fft_product = poly1.mul(&poly2);
             
             assert_eq!(fft_product.coefficients, product_vec);
@@ -309,8 +292,8 @@ mod tests {
                 divisor_vec = (0..length1).map(|_| Fp::random(OsRng)).collect();
             }
 
-            let dividend = Polynomial::new(dividend_vec);
-            let divisor = Polynomial::new(divisor_vec);
+            let dividend = Polynomial::new(&dividend_vec);
+            let divisor = Polynomial::new(&divisor_vec);
 
             let (quotient, remainder) = dividend.div(&divisor);
             
@@ -333,8 +316,8 @@ mod tests {
             let poly1_vec: Vec<Fp> = (0..length1).map(|_| Fp::random(OsRng)).collect();
             let poly2_vec: Vec<Fp> = (0..length2).map(|_| Fp::random(OsRng)).collect();
 
-            let poly1 = Polynomial::new(poly1_vec);
-            let poly2 = Polynomial::new(poly2_vec);
+            let poly1 = Polynomial::new(&poly1_vec);
+            let poly2 = Polynomial::new(&poly2_vec);
     
             let product = poly1.mul(&poly2);
             let (quotient, remainder) = product.div(&poly2);

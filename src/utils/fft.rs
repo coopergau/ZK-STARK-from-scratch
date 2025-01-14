@@ -4,24 +4,24 @@ use crate::ff::{PrimeField, Field};
 The FFT is used for evaluation and the IFFT is used to interpolation. Functions are generic to support testing over different prime fields. */
 
 // FFT
-pub fn evaluate_poly<F: PrimeField>(coeffs: Vec<F>, omega: F) -> Vec<F> {
+pub fn evaluate_poly<F: PrimeField>(coeffs: &Vec<F>, omega: F) -> Vec<F> {
     let length = coeffs.len();
     if length == 1 {
-        return coeffs;
+        return coeffs.to_vec();
     }
 
     // Split the polynomial into even and odd parts 
     let even_poly = coeffs.iter().enumerate()
-    .filter(|(i, _)| i % 2 == 0).map(|(_, v)| v.clone())
+    .filter(|(i, _)| i % 2 == 0).map(|(_, v)| *v)
     .collect();
     let odd_poly = coeffs.iter().enumerate()
-    .filter(|(i, _)| i % 2 != 0).map(|(_, v)| v.clone())
+    .filter(|(i, _)| i % 2 != 0).map(|(_, v)| *v)
     .collect();
     
     // Recursive calls over the new domain of half the length of the current domain
     let new_omega = omega.pow(&[2]);
-    let y_even = evaluate_poly(even_poly, new_omega);
-    let y_odd = evaluate_poly(odd_poly, new_omega);
+    let y_even = evaluate_poly(&even_poly, new_omega);
+    let y_odd = evaluate_poly(&odd_poly, new_omega);
 
     // Combine even and odd terms using the FFT butterfly operation.
     let mut y: Vec<F> = vec![Field::ZERO; length];
@@ -36,18 +36,18 @@ pub fn evaluate_poly<F: PrimeField>(coeffs: Vec<F>, omega: F) -> Vec<F> {
 }
 
 // IFFT
-pub fn interpolate_poly<F: PrimeField>(evals: Vec<F>, inverse_omega: F) -> Vec<F> {
+pub fn interpolate_poly<F: PrimeField>(evals: &Vec<F>, inverse_omega: F) -> Vec<F> {
     let length = evals.len();
     if length == 1 {
-        return evals;
+        return evals.to_vec();
     }
 
     // Split the polynomial into even and odd parts 
     let even_poly = evals.iter().enumerate()
-    .filter(|(i, _)| i % 2 == 0).map(|(_, v)| v.clone())
+    .filter(|(i, _)| i % 2 == 0).map(|(_, v)| *v)
     .collect();
     let odd_poly = evals.iter().enumerate()
-    .filter(|(i, _)| i % 2 != 0).map(|(_, v)| v.clone())
+    .filter(|(i, _)| i % 2 != 0).map(|(_, v)| *v)
     .collect();
     
     // Recursive calls over the new domain of half the length of the current domain.
@@ -55,8 +55,8 @@ pub fn interpolate_poly<F: PrimeField>(evals: Vec<F>, inverse_omega: F) -> Vec<F
        Even though inerpolate_poly() uses the inverse of omega, it takes that as a function argument and uses it the same way evaluate_poly() does,
        so the two funcitons are essentially the same but interpolate_poly has normalization. */
     let new_omega = inverse_omega.pow(&[2]);
-    let y_even = evaluate_poly(even_poly, new_omega);
-    let y_odd = evaluate_poly(odd_poly, new_omega);
+    let y_even = evaluate_poly(&even_poly, new_omega);
+    let y_odd = evaluate_poly(&odd_poly, new_omega);
 
     // Combine even and odd terms using the FFT butterfly operation.
     let mut y: Vec<F> = vec![Field::ZERO; length];
@@ -99,7 +99,7 @@ mod tests {
     fn test_evaluate_poly_basic() {
         let poly_coeffs: Vec<FpSmall> = vec![FpSmall::from(5), FpSmall::from(1), FpSmall::from(13), FpSmall::from(16)];
         let expected_evals: Vec<FpSmall> = vec![FpSmall::from(1), FpSmall::from(0), FpSmall::from(1), FpSmall::from(1)];
-        let actual_evals = evaluate_poly(poly_coeffs, *G);
+        let actual_evals = evaluate_poly(&poly_coeffs, *G);
         assert_eq!(actual_evals, expected_evals);
     }
     
@@ -108,7 +108,7 @@ mod tests {
     fn test_interpolate_poly_basic() {
         let poly_evals: Vec<FpSmall> = vec![FpSmall::from(1), FpSmall::from(0), FpSmall::from(1), FpSmall::from(1)];
         let expected_coeffs: Vec<FpSmall> = vec![FpSmall::from(5), FpSmall::from(1), FpSmall::from(13), FpSmall::from(16)];
-        let actual_coeffs = interpolate_poly(poly_evals, *G_INVERSE);
+        let actual_coeffs = interpolate_poly(&poly_evals, *G_INVERSE);
         assert_eq!(actual_coeffs, expected_coeffs);
     }
 
@@ -116,7 +116,7 @@ mod tests {
     // A constant polynomial shoudl evaluate to the constant everywhere.
     fn test_evaluate_constant(){
         let poly_coeff: Vec<Fp> = vec![Fp::random(OsRng)];
-        let actual_eval = evaluate_poly(poly_coeff.clone(), Fp::random(OsRng));
+        let actual_eval = evaluate_poly(&poly_coeff, Fp::random(OsRng));
         assert_eq!(actual_eval, poly_coeff);
     }
 
@@ -124,7 +124,7 @@ mod tests {
     // A single evaluation should interpolate to a constant polynomial.
     fn test_interpolate_constant(){
         let poly_eval: Vec<Fp> = vec![Fp::random(OsRng)];
-        let actual_coeff = interpolate_poly(poly_eval.clone(), Fp::random(OsRng));
+        let actual_coeff = interpolate_poly(&poly_eval, Fp::random(OsRng));
         assert_eq!(actual_coeff, poly_eval);
     }
     
@@ -141,10 +141,10 @@ mod tests {
             let initial_coeffs: Vec<Fp> = (0..16).map(|_| Fp::random(OsRng)).collect();
             
             // Evaluate the polynomial at generator points
-            let evaluations = evaluate_poly(initial_coeffs.clone(), random_generator);
+            let evaluations = evaluate_poly(&initial_coeffs, random_generator);
             
             // Interpolate the polynomial from the evaluations
-            let final_coeffs = interpolate_poly(evaluations, generator_inverse);
+            let final_coeffs = interpolate_poly(&evaluations, generator_inverse);
             
             assert_eq!(initial_coeffs, final_coeffs);
         }
@@ -162,10 +162,10 @@ mod tests {
             let initial_evals: Vec<Fp> = (0..8).map(|_| Fp::random(OsRng)).collect();
             
             // Interpolate the polynomial coefficients
-            let coefficients = interpolate_poly(initial_evals.clone(), generator_inverse);
+            let coefficients = interpolate_poly(&initial_evals, generator_inverse);
             
             // Evaluate the polynomial at the generator points
-            let final_evals = evaluate_poly(coefficients, random_generator);
+            let final_evals = evaluate_poly(&coefficients, random_generator);
             
             assert_eq!(initial_evals, final_evals);
         }
