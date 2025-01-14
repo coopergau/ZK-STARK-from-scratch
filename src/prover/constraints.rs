@@ -39,13 +39,5 @@ pub fn calculate_constraint_poly2(f_poly: &Polynomial<Fp>, g: Fp) -> () {
    
    let f_plus_k_poly = f_poly.add(&k_poly);
    let f_k_cubed_poly = f_plus_k_poly.mul(&f_plus_k_poly).mul(&f_plus_k_poly);
-   println!("{:?}", f_k_cubed_poly.len());
-   println!("{:?}", f_plus_k_poly.len());
-   // Why is the size no 3 * 128
-   let normal_eval = f_plus_k_poly.evaluate(&Fp::random(OsRng));
-   let cubed = normal_eval.pow(&[3]);
-   let cubed_eval = f_k_cubed_poly.evaluate(&Fp::random(OsRng));
-   println!("{:?}", cubed);
-   println!("{:?}", cubed_eval);
 
 }
