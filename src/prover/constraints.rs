@@ -4,13 +4,13 @@ use crate::polynomials::poly::Polynomial;
 use crate::trace::create_trace::MIMC_CONSTANT;
 
 pub fn calculate_constraint_polys(
-    proof_i: Fp, 
-    proof_o: Fp, 
+    proof_i: &Fp, 
+    proof_o: &Fp, 
     f_poly: Polynomial<Fp>, 
-    subgroup_generator: Fp
+    subgroup_generator: &Fp
 ) -> (Polynomial<Fp>, Polynomial<Fp>, Polynomial<Fp>) {
     let c_1 = calculate_basic_constraint_poly(proof_i, &f_poly);
-    let c_2 = calculate_constraint_poly2(&f_poly, subgroup_generator);
+    let c_2 = calculate_constraint_poly2(&f_poly, &subgroup_generator);
     let c_3 = calculate_basic_constraint_poly(proof_o, &f_poly);
     
     (c_1, c_2, c_3)
@@ -18,8 +18,8 @@ pub fn calculate_constraint_polys(
 
 // Creates the constraint polynomial of the form: c(x) = f(x) - constant, for a given constant.
 // Used to create c_1(x) = f(x) - I and c_3(x) = f(x) - O, for the mimc input I and output O.
-pub fn calculate_basic_constraint_poly(constant: Fp, f_poly: &Polynomial<Fp>) -> Polynomial<Fp> {
-    let constant_vec = vec![constant];
+pub fn calculate_basic_constraint_poly(constant: &Fp, f_poly: &Polynomial<Fp>) -> Polynomial<Fp> {
+    let constant_vec = vec![*constant];
     let constant_poly = Polynomial::new(&constant_vec);
     let constraint_poly = f_poly.sub(&constant_poly);
 
@@ -27,7 +27,7 @@ pub fn calculate_basic_constraint_poly(constant: Fp, f_poly: &Polynomial<Fp>) ->
 }
 
 // c_2(x) = f(gx) - (f(x) + k)^3.
-pub fn calculate_constraint_poly2(f_poly: &Polynomial<Fp>, g: Fp) -> Polynomial<Fp> {
+pub fn calculate_constraint_poly2(f_poly: &Polynomial<Fp>, g: &Fp) -> Polynomial<Fp> {
    // Create g(x) = 1 + gx + g^2x^2 + g^3x^3 ...
    let mut g_vec = vec![Fp::ONE]; 
    for i in 1..f_poly.len() {

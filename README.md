@@ -45,12 +45,23 @@ In this circuit we have the three constraint polynomials:
 2. c_2(x) = f(gx) - (f(x) + k)^3, which has roots x = g^i, 0 <= i <= 127
 3. c_3(x) = f(x) - O, which has a root at x = g^127 
 
-6. Composite Polynomial
+6. Composition Polynomial
+- Compute the composition polynomial p:L->F
+Each constraint polynomial can be divided by its specific roots that are part of the trace to result in another polynomial (no remainder).
+1. p_1(x) = c_1(x) / (x - g^0)
+2. p_2(x) = c_2(x) / product (x - g^i), for i=0 to 127
+so p_2(x) - c_2(x) / x^128 - 1 
+3. p_3(x) = c_3(x) / (x - g^127)
+
+The composition polynomial is a linear combination of the individualp p_i polynomials:
+p_(x) = (a)p_1(x) + (b)p_2(x) + (c)p_3(x) for pseudorandom field elements a, b, and c.
+
 
 
 ## What to do right now
-- Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) so the queries can be any point in L
 - constraint polys
+- add error if remainder is not zero in composition polynomial step - theres a comment in constraint_polys.rs
+- Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) so the queries can be any point in L
 
 ## Proof generation steps
 1. User submits I and O
