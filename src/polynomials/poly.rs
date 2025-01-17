@@ -17,7 +17,6 @@ impl<F: PrimeField> Polynomial<F> {
     
     pub fn new(coefficients: &Vec<F>) -> Polynomial<F> {
         if *coefficients.last().unwrap() == F::ZERO {
-            println!("{:?}", "yes");
             let mut new_coeffs = coefficients.clone();
             while let Some(&last) = new_coeffs.last() {
                 if last == F::ZERO && new_coeffs.len() > 1 {

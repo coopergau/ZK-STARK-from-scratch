@@ -27,7 +27,7 @@ pub fn generate_proof(mimc_input: Fp, mimc_output: Fp) {
     
     // Compute the constraint polynomials c_i. These should all equal zero over the domain G.
     let f_poly = Polynomial::new(&f_poly_coeffs);
-    calculate_constraint_polys(mimc_input, mimc_output, f_poly, g_generator);
+    let (c_1, c_2, c_3) = calculate_constraint_polys(mimc_input, mimc_output, f_poly, g_generator);
 
     // Compute the composition polynomial p.
 
