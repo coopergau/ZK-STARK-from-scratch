@@ -85,12 +85,12 @@ impl<F: PrimeField> Polynomial<F> {
         coeffs2.resize(length, F::ZERO);
 
         // The FFT and IFFT require the nth primitive root of unity.
-        let root_of_untiy = generators::get_generator(length_fp);
-        let inverse_root_of_unity = root_of_untiy.invert().unwrap();
+        let root_of_unity = generators::get_generator(length_fp);
+        let inverse_root_of_unity = root_of_unity.invert().unwrap();
 
         // Convert each polynomial into evaluation form.
-        let evals1 = fft::evaluate_poly(&coeffs1, root_of_untiy);
-        let evals2 = fft::evaluate_poly(&coeffs2, root_of_untiy);
+        let evals1 = fft::evaluate_poly(&coeffs1, root_of_unity);
+        let evals2 = fft::evaluate_poly(&coeffs2, root_of_unity);
 
         // Multiply the evaluations.
         let mut product: Vec<F> = Vec::new();

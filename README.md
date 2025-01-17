@@ -50,7 +50,7 @@ In this circuit we have the three constraint polynomials:
 Each constraint polynomial can be divided by its specific roots that are part of the trace to result in another polynomial (no remainder).
 1. p_1(x) = c_1(x) / (x - g^0)
 2. p_2(x) = c_2(x) / product (x - g^i), for i=0 to 127
-so p_2(x) - c_2(x) / x^128 - 1 
+so p_2(x) - c_2(x) / (x^128 - 1) 
 3. p_3(x) = c_3(x) / (x - g^127)
 
 The composition polynomial is a linear combination of the individualp p_i polynomials:
