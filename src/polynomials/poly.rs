@@ -110,7 +110,6 @@ impl<F: PrimeField> Polynomial<F> {
     }
 
     // Function divides self by the divisor and returns the tuple in the form (quotient, remainder)
-    // This shit does not work, write your own
     pub fn div(&self, divisor_poly: &Polynomial<F>) -> (Polynomial<F>, Polynomial<F>) {
         let mut dividend_vec = self.coefficients.clone();
         let divisor = &divisor_poly.coefficients;
