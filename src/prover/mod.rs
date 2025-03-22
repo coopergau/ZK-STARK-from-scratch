@@ -1,3 +1,3 @@
 pub mod proof;
-pub mod constraints;
+pub mod constraint_polys;
 pub mod composition_poly;
