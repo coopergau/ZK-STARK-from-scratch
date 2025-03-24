@@ -24,12 +24,12 @@ G order - 128
 g (G generator) - 7^{(p-1)/128} mod p
 
 f(g^0) = I,
-f(g^i) = (f(g^{i-1}) + k)^3 for 1 <= i <= 127,
+f(g^{i+1}) = (f(g^{i}) + k)^3 for 1 <= i <= 126,
 f(g^127) = O
 
 These create three constraint polynomials which we will create in step 4:
 1. c_1(x) = f(x) - I = 0, for x = g^0
-2. c_2(x) = f(gx) - (f(x) + k)^3 = 0, for x = g^i, 0 <= i <= 127
+2. c_2(x) = f(gx) - (f(x) + k)^3 = 0, for x = g^i, 0 <= i <= 126
 3. c_3(x) = f(x) - O = 0, for x = g^127
 
 4. Reed-Soloman Encoding
@@ -42,15 +42,15 @@ Take the coefficient form of f and extend it over L to get the polynomial in eva
 - Compute the constraint polynomials c:L->F
 In this circuit we have the three constraint polynomials:
 1. c_1(x) = f(x) - I, which has a root at x = g^0
-2. c_2(x) = f(gx) - (f(x) + k)^3, which has roots x = g^i, 0 <= i <= 127
+2. c_2(x) = f(gx) - (f(x) + k)^3, which has roots x = g^i, 0 <= i <= 126
 3. c_3(x) = f(x) - O, which has a root at x = g^127 
 
 6. Composition Polynomial
 - Compute the composition polynomial p:L->F
 Each constraint polynomial can be divided by its specific roots that are part of the trace to result in another polynomial (no remainder).
 1. p_1(x) = c_1(x) / (x - g^0)
-2. p_2(x) = c_2(x) / product (x - g^i), for i=0 to 127
-so p_2(x) - c_2(x) / (x^128 - 1) 
+2. p_2(x) = c_2(x) / product (x - g^i), for i=0 to 126
+so p_2(x) - c_2(x) / [(x^128 - 1) / (x - g^127)]
 3. p_3(x) = c_3(x) / (x - g^127)
 
 The composition polynomial is a linear combination of the individualp p_i polynomials:
@@ -61,6 +61,7 @@ p_(x) = (a)p_1(x) + (b)p_2(x) + (c)p_3(x) for pseudorandom field elements a, b, 
 ## What to do right now
 - constraint polys
 - add error if remainder is not zero in composition polynomial step - theres a comment in constraint_polys.rs
+- Maybe go over the somposition poly to make sure functions are clean - refactored the poly functions
 - Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) (dont have to do this part) so the queries can be any point in L
 
 ## Proof generation steps

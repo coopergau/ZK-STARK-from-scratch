@@ -106,7 +106,7 @@ mod tests {
     assert!(c_1.evaluate(&Fp::ONE) == Fp::ZERO); 
     assert!(c_3.evaluate(&g_generator.pow(&[127])) == Fp::ZERO);
     
-    for i in 1..127 {
+    for i in 1..126 {
         assert!(c_2.evaluate(&g_generator.pow(&[i as u64])) == Fp::ZERO);
     }
     }
