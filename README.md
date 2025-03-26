@@ -62,6 +62,7 @@ p_(x) = (a)p_1(x) + (b)p_2(x) + (c)p_3(x) for pseudorandom field elements a, b, 
 - constraint polys
 - add error if remainder is not zero in composition polynomial step - theres a comment in constraint_polys.rs
 - Maybe go over the somposition poly to make sure functions are clean - refactored the poly functions
+- get it working first then add k(x) poly to original f poly so we add a different k every round
 - Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) (dont have to do this part) so the queries can be any point in L
 
 ## Proof generation steps
