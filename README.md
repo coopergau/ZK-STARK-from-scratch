@@ -59,9 +59,8 @@ If p(x) is a polynomial then with high probability, p_1(x) and p_2(x) are all po
 
 
 ## What to do right now
-- Read the fri thing and understand why they do that. I think the zk part is somewhere in here
-- Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) 
-- I think it's something with the equation above that allows for sampling outside of the trace domain and then u cant start decoding the actual trace values bc of the randomness?
+- FRI stuff
+- we have basic zk if we allow querying only outside the trace domain.
 
 ## Proof generation steps
 1. User submits I and O
