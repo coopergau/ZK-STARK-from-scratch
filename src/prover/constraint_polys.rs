@@ -9,16 +9,15 @@ pub fn calculate_constraint_polys(
     proof_o: &Fp, 
     f_poly: &Polynomial<Fp>, 
     subgroup_generator: &Fp
-) -> (Polynomial<Fp>, Polynomial<Fp>, Polynomial<Fp>) {
-    let c_1 = calculate_basic_constraint_poly(proof_i, f_poly);
-    let c_2 = calculate_constraint_poly2(f_poly, &subgroup_generator);
-    let c_3 = calculate_basic_constraint_poly(proof_o, f_poly);
+) -> (Polynomial<Fp>, Polynomial<Fp>) {
+    let c_1 = calculate_constraint_poly2(f_poly, &subgroup_generator);
+    let c_2 = calculate_basic_constraint_poly(proof_o, f_poly);
     
-    (c_1, c_2, c_3)
+    (c_1, c_2)
 }
 
 // Creates the constraint polynomial of the form: c(x) = f(x) - constant, for a given constant.
-// Used to create c_1(x) = f(x) - I and c_3(x) = f(x) - O, for the mimc input I and output O.
+// Used to create c_2(x) = f(x) - O, for the mimc output O.
 pub fn calculate_basic_constraint_poly(constant: &Fp, f_poly: &Polynomial<Fp>) -> Polynomial<Fp> {
     let constant_vec = vec![*constant];
     let constant_poly = Polynomial::new(&constant_vec);
@@ -78,8 +77,8 @@ mod tests {
     use crate::trace::create_trace;
 
     #[test]
-    // Tests that c_1(g^0) == 0 and c_2(g^127) == 0
-    fn test_c_1_and_c_3_are_zero_on_correct_trace_elements() {
+    // Tests that c_2(g^127) == 0 and c_1(g^i) == 0 for all i, 0 <= i <= 126.
+    fn test_constraint_polys_are_zero_on_correct_trace_elements() {
     // Running almost full proof up to the generation of constraint polys
     
     let mimc_input = Fp::from(5);
@@ -101,13 +100,12 @@ mod tests {
     
     // Compute the constraint polynomials c_1, c_2, and c_3.
     let f_poly = Polynomial::new(&f_poly_coeffs);
-    let (c_1, c_2, c_3) = calculate_constraint_polys(&mimc_input, &mimc_output, &f_poly, &g_generator);
+    let (c_1, c_2) = calculate_constraint_polys(&mimc_input, &mimc_output, &f_poly, &g_generator);
     
-    assert!(c_1.evaluate(&Fp::ONE) == Fp::ZERO); 
-    assert!(c_3.evaluate(&g_generator.pow(&[127])) == Fp::ZERO);
+    assert!(c_2.evaluate(&g_generator.pow(&[127])) == Fp::ZERO);
     
     for i in 1..126 {
-        assert!(c_2.evaluate(&g_generator.pow(&[i as u64])) == Fp::ZERO);
+        assert!(c_1.evaluate(&g_generator.pow(&[i as u64])) == Fp::ZERO);
     }
     }
 

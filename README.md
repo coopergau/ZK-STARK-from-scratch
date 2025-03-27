@@ -12,8 +12,7 @@ The prover knows numbers I and O such that making I the input to the MiMC hash f
 - The output from every round is used as the input for the next round until the last round is complete and the final output is returned.
 
 2. CI constraints:
-x_0 = I,
-x_i = (x_{i-1} + k)^3 for integers i, 1 <= i <= 127
+x_{i+1} = (x_{i} + k)^3 for integers i, 0 <= i <= 126
 x_127 = O
 
 3. Polynomial Constraints:
@@ -23,46 +22,46 @@ F generator - 7
 G order - 128
 g (G generator) - 7^{(p-1)/128} mod p
 
-f(g^0) = I,
 f(g^{i+1}) = (f(g^{i}) + k)^3 for 1 <= i <= 126,
 f(g^127) = O
 
-These create three constraint polynomials which we will create in step 4:
-1. c_1(x) = f(x) - I = 0, for x = g^0
-2. c_2(x) = f(gx) - (f(x) + k)^3 = 0, for x = g^i, 0 <= i <= 126
-3. c_3(x) = f(x) - O = 0, for x = g^127
+These create two constraint polynomials which we will create in step 4:
+1. c_1(x) = f(gx) - (f(x) + k)^3 = 0, for x = g^i, 0 <= i <= 126
+2. c_2(x) = f(x) - O = 0, for x = g^127
 
-4. Reed-Soloman Encoding
+4. Reed-Soloman Encoding - maybe consider extending the domain by a factor of 8 instead of 32.
 - Extend the evaluation domain of f to L so f:L->F.
 |L| = 4096 because its decently big but much less than p.
-So the generator of L is 7^{(p-1)/4096} mod p. This will create a superset of G that has 4096 elements.
+So the generator of L is g^{1/32} 7^{(p-1)/4096} mod p. This will create a superset of G that has 4096 elements.
 Take the coefficient form of f and extend it over L to get the polynomial in evaluation form over L.
 
 5. Constraint Polynomials
 - Compute the constraint polynomials c:L->F
-In this circuit we have the three constraint polynomials:
-1. c_1(x) = f(x) - I, which has a root at x = g^0
-2. c_2(x) = f(gx) - (f(x) + k)^3, which has roots x = g^i, 0 <= i <= 126
-3. c_3(x) = f(x) - O, which has a root at x = g^127 
+In this circuit we have the two constraint polynomials:
+1. c_1(x) = f(gx) - (f(x) + k)^3, which has roots x = g^i, 0 <= i <= 126
+2. c_2(x) = f(x) - O, which has a root at x = g^127 
 
 6. Composition Polynomial
 - Compute the composition polynomial p:L->F
 Each constraint polynomial can be divided by its specific roots that are part of the trace to result in another polynomial (no remainder).
-1. p_1(x) = c_1(x) / (x - g^0)
-2. p_2(x) = c_2(x) / product (x - g^i), for i=0 to 126
-so p_2(x) - c_2(x) / [(x^128 - 1) / (x - g^127)]
-3. p_3(x) = c_3(x) / (x - g^127)
+1. p_1(x) = c_1(x) / product (x - g^i), for i=0 to 126
+so p_1(x) - c_1(x) / [(x^128 - 1) / (x - g^127)]
+2. p_2(x) = c_2(x) / (x - g^127)
 
 The composition polynomial is a linear combination of the individualp p_i polynomials:
-p_(x) = (a)p_1(x) + (b)p_2(x) + (c)p_3(x) for pseudorandom field elements a, b, and c.
+p(x) = (a)p_1(x) + (b)p_2(x) for pseudorandom field elements a and b, which we will obtain via Fiat-Shamir.
+
+If p_1(x) and p_2(x) are all polynomials then the original statement is true.
+If p(x) is a polynomial then with high probability, p_1(x) and p_2(x) are all polynomials.
+
+7. 
 
 
 
 ## What to do right now
-- constraint polys
-- add error if remainder is not zero in composition polynomial step - theres a comment in constraint_polys.rs
-- Maybe go over the somposition poly to make sure functions are clean - refactored the poly functions
-- Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) (dont have to do this part) so the queries can be any point in L
+- Read the fri thing and understand why they do that. I think the zk part is somewhere in here
+- Get the proof working first and then add the zero knowledge part of f'(x) = f(x) + u(x)r(x) 
+- I think it's something with the equation above that allows for sampling outside of the trace domain and then u cant start decoding the actual trace values bc of the randomness?
 
 ## Proof generation steps
 1. User submits I and O
@@ -72,4 +71,6 @@ p_(x) = (a)p_1(x) + (b)p_2(x) + (c)p_3(x) for pseudorandom field elements a, b, 
 5. Create composite polynomial from constraint polys
 Then commitments and querying and stuff
 
-remove get_mimc_constants
+- Maybe go over the composition poly to make sure functions are clean - refactored the poly functions
+- maybe consider extending the domain by a factor of 8 instead of 32
+- add back in get_mimc_constants so its not just k every round but k(x) which just gives the k corresponding to that round.
