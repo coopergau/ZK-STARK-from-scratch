@@ -4,6 +4,7 @@ use crate::{MIMC_ROUNDS, G_DOMAIN_SIZE, L_DOMAIN_SIZE};
 use crate::trace::create_trace;
 use crate::utils::{generators, fft};
 use crate::polynomials::poly::Polynomial;
+use super::merkle::merkle_commit;
 use super::constraint_polys::calculate_constraint_polys;
 use super::composition_poly::calculate_composition_poly;
 
@@ -17,17 +18,18 @@ pub fn generate_proof(mimc_input: Fp, mimc_output: Fp) {
     let g_generator = generators::get_generator(g_order);
     let g_generator_inverse = g_generator.invert().unwrap();
     let mut f_poly_coeffs = fft::interpolate_poly(&trace, g_generator_inverse);
+    let f_poly = Polynomial::new(&f_poly_coeffs);
     
     // Low degree extension (LDE) - Evaluate the polynomial over the larger domain L.
-    let l_order = Fp::from(L_DOMAIN_SIZE);
-    let l_generator = generators::get_generator(l_order);
+    let l_size = Fp::from(L_DOMAIN_SIZE);
+    let l_generator = generators::get_generator(l_size);
     f_poly_coeffs.resize(L_DOMAIN_SIZE as usize, Field::ZERO); // Add padding in order to extend the evaluation domain.
     let f_evals_over_extended_domain = fft::evaluate_poly(&f_poly_coeffs, l_generator);
     
     // Commit to the LDE of the polynomial f.
+    let f_poly_commitment_root = merkle_commit(&f_poly, l_generator, L_DOMAIN_SIZE as usize);
     
     // Compute the constraint polynomials c_1, c_2, and c_3.
-    let f_poly = Polynomial::new(&f_poly_coeffs);
     let (c_1, c_2) = calculate_constraint_polys(&mimc_input, &mimc_output, &f_poly, &g_generator);
 
     // Compute the composition polynomial p. 

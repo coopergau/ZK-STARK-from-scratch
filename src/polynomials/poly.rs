@@ -10,6 +10,7 @@ pub fn field_divide<F: PrimeField>(dividend: &F, divisor: &F) -> F {
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<F> {
+    // Coeficient order: constant term is first
     pub coefficients: Vec<F>,
 }
 
