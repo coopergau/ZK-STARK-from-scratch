@@ -73,5 +73,6 @@ Then commitments and querying and stuff
 - Maybe go over the composition poly to make sure functions are clean - refactored the poly functions
 - maybe consider extending the domain by a factor of 8 instead of 32
 - add back in get_mimc_constants so its not just k every round but k(x) which just gives the k corresponding to that round.
+- mention that this is not technically perfect zk and does reveal a lin combination (or something) of the trace so with enough queries the trace poly can be interpolated. so if multiple parties prove to the same verifier a proof for the same mimc output, extra measures would be required.
 - just go over all the imports to make sure that is proper and modern
 - mention that the hashing process in merkle trees is just for demo and be grealy optimized to avoid converting to and from big ints
