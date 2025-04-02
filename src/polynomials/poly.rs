@@ -1,6 +1,7 @@
 use crate::finite_field::field_params::Fp;
 use crate::ff::{PrimeField, Field};
 use crate::utils::{generators, fft};
+use std::default::Default;
 
 // Divide function for PrimeFields, used in polynomial division.
 pub fn field_divide<F: PrimeField>(dividend: &F, divisor: &F) -> F {
@@ -8,14 +9,17 @@ pub fn field_divide<F: PrimeField>(dividend: &F, divisor: &F) -> F {
     *dividend * inverse
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Polynomial<F> {
     // Coeficient order: constant term is first
     pub coefficients: Vec<F>,
 }
 
 impl<F: PrimeField> Polynomial<F> {
-    
+    pub fn default() -> Self {
+        Polynomial { coefficients: vec![F::ZERO] }
+    }
+
     pub fn new(coefficients: &Vec<F>) -> Polynomial<F> {
         if *coefficients.last().unwrap() == F::ZERO {
             let mut new_coeffs = coefficients.clone();

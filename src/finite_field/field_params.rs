@@ -7,3 +7,8 @@ use ff::{PrimeField, Field};
 #[PrimeFieldReprEndianness = "little"]
 pub struct Fp([u64; 4]);
 
+impl Fp {
+    pub fn default() -> Self {
+        Fp::ZERO
+    }
+}

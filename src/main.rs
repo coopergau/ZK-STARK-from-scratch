@@ -9,7 +9,7 @@ mod polynomials;
 use crate::finite_field::field_params::Fp;
 use crate::ff::PrimeField;
 use crate::trace::create_trace::mimc_output;
-use crate::prover::proof;
+use crate::prover::proof::Proof;
 
 const MIMC_ROUNDS: u32 = 127;
 const G_DOMAIN_SIZE: u64 = 128;
@@ -18,8 +18,8 @@ const L_DOMAIN_SIZE: u64 = 4096;
 fn main() {
     // Private input to the proof
     let private_input = Fp::from(5);
-    let public_input = mimc_output(&private_input, MIMC_ROUNDS);
-    proof::generate_proof(private_input, public_input);
-
+    //let public_input = mimc_output(&private_input, MIMC_ROUNDS);
+    let mut proof = Proof::initialize_proof(MIMC_ROUNDS, G_DOMAIN_SIZE, L_DOMAIN_SIZE);
+    proof.generate_proof(private_input);
     
 }

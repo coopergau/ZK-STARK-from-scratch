@@ -5,7 +5,6 @@ use crate::trace::create_trace::MIMC_CONSTANT;
 use crate::utils::{generators, fft};
 
 pub fn calculate_constraint_polys(
-    proof_i: &Fp, 
     proof_o: &Fp, 
     f_poly: &Polynomial<Fp>, 
     subgroup_generator: &Fp

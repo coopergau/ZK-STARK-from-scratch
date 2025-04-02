@@ -76,3 +76,6 @@ Then commitments and querying and stuff
 - mention that this is not technically perfect zk and does reveal a lin combination (or something) of the trace so with enough queries the trace poly can be interpolated. so if multiple parties prove to the same verifier a proof for the same mimc output, extra measures would be required.
 - just go over all the imports to make sure that is proper and modern
 - mention that the hashing process in merkle trees is just for demo and be grealy optimized to avoid converting to and from big ints
+- check that these cant all be u32 or something: in proof struct  mimc_rounds: u32, initial_domain_size: u64, extended_domain_size: u64. just make them usize?
+- go over if struct impls shoudl return the explicit type or just self
+- add g_order to the proof struct so it only has to be generated once
