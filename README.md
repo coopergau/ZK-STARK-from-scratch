@@ -1,5 +1,7 @@
 # ZK STARK From Scratch
 
+Work in progress
+
 ## Overview
 Zero Knowledge STARK protocol for proving the knowledge of the pre image to a n output of the MiMC hash function.
 
